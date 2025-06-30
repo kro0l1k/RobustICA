@@ -73,26 +73,11 @@ Real-world application of ICA to the cocktail party problem:
 - **`generate_unmixed_mp3.py`** - Generate separated audio outputs
 
 
-
-#### `robustness/`
-
-Collection of generated robustness analysis plots and PDFs:
-
-- Theorem 4.3 validation plots (with and without masks)
-- IC-defect analysis results
-
-
 ### Visualization and Results
-
-#### Generated Plots
-
-- **`delta_vs_confounder_strength.png`** - IID signals analysis
-- **`delta_vs_confounder_strengthOU.png`** - Ornstein-Uhlenbeck process analysis  
-- **`delta_vs_confounder_strength_iid.png`** - Additional IID analysis
 
 #### `point_cloud.ipynb`
 
-Jupyter notebook for point cloud visualization and analysis of ICA results.
+Jupyter notebook for point cloud visualization and comparison to FastICA for a two-dimensional i.i.d. signal.
 
 ### Configuration
 
@@ -107,30 +92,9 @@ scikit-learn
 scipy
 statsmodels
 signax
-jax[cuda12_pip]<0.6.0
+jax<0.6.0
 jaxlib<0.6.0
 ```
-
-#### `__pycache__/`
-
-Python bytecode cache directory (auto-generated).
-
-## 🔬 Research Focus
-
-This implementation primarily focuses on:
-
-1. **RICA Algorithm**: A robust version of ICA that uses signature-based contrast functions
-2. **Theoretical Analysis**: Implementation and validation of Theorems 4.3 and 4.6 regarding IC-defect bounds
-3. **Robustness Studies**: Comprehensive analysis of algorithm performance under various confounding conditions
-4. **Real-world Applications**: Cocktail party problem and music source separation
-5. **Comparative Analysis**: RICA vs. FastICA vs. SOBI performance comparisons
-
-## 🚀 Getting Started
-
-1. Install dependencies: `pip install -r requirements.txt`
-2. Run basic tests: `python test_43.py`
-3. Explore applications: Navigate to `cocktail_party/` or `music_mixing/` folders
-4. Generate visualizations: Use plotting scripts like `plot_what_confounding_does.py`
 
 ## 📊 Key Features
 
@@ -139,12 +103,77 @@ This implementation primarily focuses on:
 - **Identifiability Criteria checks**: Allows for testing of mean stationarity and the diagonal third-order identifiability condition.
 - **Comprehensive Testing**: Extensive robustness and theoretical validation
 
-## 📈 Experimental Results
 
-The folder contains extensive experimental validation including:
+# Installation 
 
-- Theorem 4.3 absolute and relative error bound validation
-- IC-defect parameter analysis
-- Multi-algorithm performance comparisons
-- Real-world audio separation quality assessment
-- Robustness analysis under various confounding scenarios
+
+## Quick Installation
+
+### For CPU-only systems:
+```bash
+pip install -e .
+```
+
+### For NVIDIA GPU systems (CUDA):
+```bash
+pip install -e ".[cuda]"
+```
+
+### For Apple Silicon systems:
+```bash
+pip install -e ".[metal]"
+```
+
+## Manual Installation
+
+### 1. Basic Dependencies
+```bash
+pip install numpy>=1.26.4 scikit-learn>=1.3.2 signax==0.2.1 statsmodels
+```
+
+### 2. Choose JAX Backend
+
+#### For NVIDIA GPU (CUDA 12):
+```bash
+pip install "jax[cuda12_pip]>=0.4.25" "jaxlib[cuda12_pip]>=0.4.25"
+```
+
+#### For Apple Silicon (Metal):
+```bash
+pip install jax-metal>=0.0.6 jax==0.4.24 jaxlib==0.4.23
+```
+
+#### For CPU only:
+```bash
+pip install jax>=0.4.25 jaxlib>=0.4.25
+```
+
+## Hardware Detection
+
+The updated code now automatically detects available hardware and uses the best option:
+
+1. **Metal** - Apple Silicon GPUs (M1/M2/M3/M4)
+2. **CUDA** - NVIDIA GPUs
+3. **TPU** - Google TPUs (if available)
+4. **CPU** - Fallback option
+
+## Verification
+
+After installation, run:
+```bash
+python -c "import jax; print('Available devices:', jax.devices())"
+```
+
+You should see your GPU/accelerator listed if properly configured.
+
+## Troubleshooting
+
+### CUDA Issues
+- Ensure NVIDIA drivers are installed
+- Verify CUDA 12 compatibility
+- Try: `nvidia-smi` to check GPU status
+
+### Metal Issues  
+- Only works on Apple Silicon Macs (M1/M2/M3/M4)
+- Ensure macOS is up to date
+- Implement a fallback to cpu.
