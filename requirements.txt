@@ -1,0 +1,19 @@
+numpy>=1.26.4
+matplotlib == 3.8.0
+scikit-learn>=1.3.2
+scipy
+statsmodels
+signax==0.2.1
+
+# JAX with GPU support - install only one of these sets:
+# For CUDA (NVIDIA GPUs):
+# jax[cuda12_pip]>=0.4.25
+# jaxlib[cuda12_pip]>=0.4.25
+
+# For Metal (Apple Silicon):
+jax-metal>=0.0.6
+
+# For CPU only:
+jax==0.4.24
+jaxlib==0.4.23
+
