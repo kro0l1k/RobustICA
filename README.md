@@ -114,12 +114,12 @@ jaxlib<0.6.0
 pip install -e .
 ```
 
-### For NVIDIA GPU systems (CUDA):
+#### For NVIDIA GPU systems (CUDA):
 ```bash
 pip install -e ".[cuda]"
 ```
 
-### For Apple Silicon systems:
+#### For Apple Silicon systems:
 ```bash
 pip install -e ".[metal]"
 ```
@@ -148,14 +148,7 @@ pip install jax-metal>=0.0.6 jax==0.4.24 jaxlib==0.4.23
 pip install jax>=0.4.25 jaxlib>=0.4.25
 ```
 
-## Hardware Detection
 
-The updated code now automatically detects available hardware and uses the best option:
-
-1. **Metal** - Apple Silicon GPUs (M1/M2/M3/M4)
-2. **CUDA** - NVIDIA GPUs
-3. **TPU** - Google TPUs (if available)
-4. **CPU** - Fallback option
 
 ## Verification
 
@@ -164,7 +157,12 @@ After installation, run:
 python -c "import jax; print('Available devices:', jax.devices())"
 ```
 
-You should see your GPU/accelerator listed if properly configured.
+# Running RICA on a simple example
+```
+python RICA.py
+```
+
+
 
 ## Troubleshooting
 

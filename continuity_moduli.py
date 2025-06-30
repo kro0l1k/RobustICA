@@ -237,10 +237,7 @@ class RobustnessModuli:
         # get the smallest eigenvalue of A @ Mu_star_zero @ A.T.
         a0sym = 0.5 * (Mu_star_zero + Mu_star_zero.T)  # symmetrise
         A_mu_zero_At = A @ a0sym @ A.T
-        # print("A @ Mu_star_zero @ A.T", A_mu_zero_At)
-        # compute the smallest eigenvalue
         eigenvalues = jnp.linalg.eigvalsh(A_mu_zero_At)
-        # get the smallest eigenvalue
         sigma_star = jnp.min(eigenvalues)
         print("sigma_star", sigma_star)
         return sigma_star
@@ -269,15 +266,6 @@ class RobustnessModuli:
         r_1 =  min( rho_0, varrho_0) / mathfrak_mu_star
         return r_1
     
-    def get_r_star(self, Mu_star_matrices):
-
-        def Bar_B(A, test_mu_0):    
-            # returns $\bar{B}_{(A, \tilde{\test mu}_0)}$ as defined in (122)
-            
-            # TODO:implement this
-            return 1.0  # placeholder, as the implementation is not provided in the original code
-        print(" returning a placeholder for r_star")
-        return 1.0
 
 
     def get_delta_distance(self, Mu_matrices, Mu_star_matrices): 
@@ -292,7 +280,6 @@ class RobustnessModuli:
         denominator = [1.0]
         denominator.extend(np.diag(N)) 
         denominator = np.array(denominator)  # (d+1,)
-
         
         sum_sq = 0.0
         for k in range( self.d + 1):
@@ -332,7 +319,7 @@ class RobustnessModuli:
             """λ_max(A a₀ Aᵀ) for the first slice of `a`."""
             a0 = a[0]
             sym_a0 = 0.5 * (a0 + a0.T)  # symmetrise
-            return jnp.max(jnp.linalg.eigvalsh(self.A @ sym_a0 @ self.A.T))
+            return jnp.sqrt(jnp.max(jnp.linalg.eigvalsh(self.A @ sym_a0 @ self.A.T) ))
 
         @jax.jit
         def _distance(a):
@@ -348,9 +335,6 @@ class RobustnessModuli:
             scale = jnp.minimum(1.0, tilde_c_0 / (dist + 1e-12))
             return Mu_star_matrices + diff * scale
 
-        # ------------------------------------------------------------
-        # optimiser (projected gradient ascent)
-        # ------------------------------------------------------------
         value_and_grad = jax.value_and_grad(_func)
 
         @jax.jit
@@ -360,9 +344,6 @@ class RobustnessModuli:
             a_new = _project(a_new)
             return a_new, val
 
-        # ------------------------------------------------------------
-        # initial point (centre of the ball + tiny noise)
-        # ------------------------------------------------------------
         if key is None:
             key = jax.random.PRNGKey(0)
         noise = 1e-3 * jax.random.normal(key, Mu_star_matrices.shape)
@@ -412,17 +393,15 @@ class RobustnessModuli:
             minimal_eigenvalue_in_the_ball = min_eigenvalues_hist[-1]
             
             ## attempt nr 2
-            # potential_nr_of_test_matrices = [100, 1000, 10000, 100000]
             nr_samples = 10000
             # draw nr of samples of noise around Mu_star_zero, with sum <= s_radius, 
             # take among them, take the one with the minimal eigenvalue of C
             noise_samples = jax.random.normal(inner_key, (nr_samples, Mu_star_zero.shape[0], Mu_star_zero.shape[1]))
             noise_samples = noise_samples / jnp.linalg.norm(noise_samples, ord='fro', axis=(-2, -1), keepdims=True) * s_radius
             test_matrices = Mu_star_zero + noise_samples
-            # compute the minimal eigenvalue of C for each test matrix
             min_eigenvalues = jax.vmap(_min_eigenvalue_of_C)(test_matrices)
             # disard negative eigenvalues -- they were not psd matrices
-            min_eigenvalues = jnp.where(min_eigenvalues < 0, jnp.inf, min_eigenvalues)
+            # min_eigenvalues = jnp.where(min_eigenvalues < 0, jnp.inf, min_eigenvalues)
             # print("min_eigenvalues", min_eigenvalues
             # find the minimum eigenvalue and the corresponding matrix
             minimal_eigenvalue_in_the_ball_second_method = jnp.min(min_eigenvalues)
@@ -611,7 +590,7 @@ class RobustnessModuli:
             return project_rho_zero_tilde_ball(nu + lr * grad), val
         nu_star, xi_hist = jax.lax.scan(_step_nu, nu_init, xs=None, length=n_steps)
         
-        print(" the scan to cimpute mathfrakK_3:")
+        print(" the scan to compute mathfrakK_3:")
         print("nu_star", nu_star)
         print("xi_hist", xi_hist)
         mfK3 = xi_hist[-1]
@@ -732,7 +711,7 @@ class RobustnessModuli:
             
             gamma = 1 + jnp.sqrt(5)
             # tau is the minimum of the t function:
-            mfq_r_tau = hatK * r_tau
+            mfq_r_tau = hatK * tilde_r_2
             
             ##### find the smallest denominator here, for r = mfq_r_tau
             smallest_denominator_for_tau = find_smallest_beta2_denominator(mfq_r_tau, inner_key)
@@ -858,7 +837,7 @@ class RobustnessModuli:
             
             # second way: sample 10000 matrices around Mu_star_matrices, with sum <= r_mid_for_IC_defect,
             # compute the IC defect for each of them, and take the maximum
-            noise_samples = jax.random.normal(inner_key, (10000, Mu_star_matrices.shape[0], Mu_star_matrices.shape[1], Mu_star_matrices.shape[2]))
+            noise_samples = jax.random.normal(inner_key, (10_000, Mu_star_matrices.shape[0], Mu_star_matrices.shape[1], Mu_star_matrices.shape[2]))
             test_matrices = Mu_star_matrices + noise_samples
              # for each of the 10000 matrices get the mathd distance to Mu_star_matrices
             dist_for_test_matrices = jax.vmap(_get_mathd_distance)(test_matrices)  # shape (10000,)
@@ -999,13 +978,11 @@ class RobustnessModuli:
         third_moments = np.array([Mu_star_matrices[i, i - 1, i - 1] for i in range(1, self.d + 1)])  # shape (d,)
         tilde_rho_0 = self.get_rho0tilde(second_moments,third_moments)
         mathfrak_m = self.get_L_hat(Mu_star_matrices)  
-        r_star = 10000. # NOTE: palceholder, change this
+        r_star = 10000. # NOTE: placeholder for now, it's fine since we are doing a binary search for r_3, but could play a role in \psi
         print("mathfrak_m", mathfrak_m)
         tilde_r_2 = 0.95 * min(r_0, r_1, tilde_rho_0/mathfrak_m , r_star/ mathfrak_m) 
         print("tilde_r2", tilde_r_2)
 
-        #
-        
         # get the delta distance
         delta_distance = self.get_delta_distance(Mu_matrices, Mu_star_matrices)
         print("delta distance", delta_distance, " rho_0/rho_1", rho_0/rho_1, "tilde_r_2", tilde_r_2)
