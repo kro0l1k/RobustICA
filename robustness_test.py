@@ -157,11 +157,14 @@ def main():
                 # compare to FastICA
                 try:
                     ica    = FastICA(n_components=d, max_iter=100_000, random_state=0)
-                    W_ica  = ica.fit_transform(X.T)
-                    fastica_rel_err = get_rel_err(W_ica, A_inv, *M_IplusE(W_ica, A))
+                    S_fastica = ica.fit_transform(X)  
+                    W_ica  = ica.components_       
 
                     M_fast_ica, E_fast_ica = M_IplusE(W_ica, A)
                     fast_ica_abs_err = jnp.linalg.norm(E_fast_ica, 'fro')
+                    fastica_rel_err = get_rel_err(W_ica, A_inv, M_fast_ica, E_fast_ica)
+                    print("relative error of FastICA:", fastica_rel_err)
+
                 except (np.linalg.LinAlgError, ValueError) as e:
                     warnings.warn(f"Experiment {e_nr + 1}: Error in FastICA computation. Skipping this experiment. Error: {e}")
                     skip_experiment = True
@@ -169,7 +172,6 @@ def main():
                 if skip_experiment:
                     continue
 
-                print("relative error of FastICA:", fastica_rel_err)
                 # print("W_ica @ A:\n", W_ica @ A)
 
                 # --- SOBI ---

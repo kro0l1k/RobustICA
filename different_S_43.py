@@ -32,7 +32,7 @@ except Exception as e:
 
 def main():
     np.random.seed(0)
-    d, nr_of_mc_samples_for_moment_computation = 9, 100_000
+    d, nr_of_mc_samples_for_moment_computation = 3, 100_000
     MC_SAM_LEN = 15
     nr_of_experiments = 16
 
@@ -161,7 +161,9 @@ def main():
         # compare to FastICA
         try:
             ica    = FastICA(n_components=d, max_iter=100_000, random_state=0)
-            W_ica  = ica.fit_transform(X.T)
+            S_fastica = ica.fit_transform(X)   # X shape: (n_samples, n_features)
+            W_ica  = ica.components_       # <-- this **is** the un-mixing matrix
+
             fastica_rel_err = get_rel_err(W_ica, A_inv, *M_IplusE(W_ica, A))
 
             M_fast_ica, E_fast_ica = M_IplusE(W_ica, A)
@@ -381,7 +383,7 @@ def main():
                 label='SOBI Relative Error', marker='d', linewidth=2.5,
                 markersize=8, color=colors[3], markerfacecolor='white',
                 markeredgewidth=2, markeredgecolor=colors[3])
-        ax4.set_title(r'Relative Error vs $\delta(S)$, no guarantees', 
+    ax4.set_title(r'Relative Error vs $\delta(S)$, no guarantees', 
                   fontweight='bold', pad=20)
     ax4.set_xlabel(r'$\delta(S)$', fontweight='bold')
     ax4.set_ylabel('Relative Error', fontweight='bold')

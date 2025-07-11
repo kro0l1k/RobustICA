@@ -272,7 +272,7 @@ class SignatureComputer:
             return whole_signature
 
         batched = one_sig(jpaths)
-        avg = jax.tree.map(lambda x: x.mean(axis=0), batched)
+        avg = jax.tree_util.tree_map(lambda x: x.mean(axis=0), batched)
         avg_lvl2 = avg[self.d : self.d + self.d**2]
         return self._lev_2_mat(avg_lvl2.ravel())
 
@@ -303,7 +303,7 @@ class SignatureComputer:
                     if adf_p > 0.001:
                         print(f"Series {i} is stationary, but we had a non-zero p value: ADF stat={adf_stat}, p-value={adf_p}")
 
-        avg = jax.tree.map(lambda x: x.mean(axis=0), batched)
+        avg = jax.tree_util.tree_map(lambda x: x.mean(axis=0), batched)
 
         # print("batched size: ", batched.shape) # (B, D + D**2 + D**3)
         avg_lvl1 = avg[:self.d]
@@ -475,11 +475,11 @@ class Optimizer:
             np.ndarray: R matrix of shape (d, d)
         """
         C = 0.5*(M2 + M2.T)
-        C_np = np.array(C)
-        if np.linalg.cond(C_np) > 1e3:
+        # C_np = np.array(C)
+        if jnp.linalg.cond(C) > 1e3:
             warnings.warn("C nearly singular")
-        R = self.inverse_sqrt_psd_matrix(C_np)
-        
+        R = self.inverse_sqrt_psd_matrix(C)
+
         return np.array(R)
     
     def contrast_from_Mu(self, Mu_matrices: np.ndarray) -> float:
@@ -669,12 +669,18 @@ def main():
 
         # compare to FastICA
         ica    = FastICA(n_components=d, max_iter=100_000, random_state=0)
-        W_ica  = ica.fit_transform(X.T)
-        fastica_rel_err = get_rel_err(W_ica, A_inv, *M_IplusE(W_ica, A))
-    
+
+        S_fastica = ica.fit_transform(X)   # X shape: (n_samples, n_features)
+        W_fastica  = ica.components_       
+        A_fastica   = ica.mixing_           
+
+
+        print("W_fastica shape: ", W_fastica.shape)
+        fastica_rel_err = get_rel_err(W_fastica, A_inv, *M_IplusE(W_fastica, A))
+
         print("rel_err of FastICA:",
               fastica_rel_err)
-        print("W_ica @ A: \n", W_ica @ A)
+        print("W_fastica @ A: \n", W_fastica @ A)
         print("W_sobi @ A: \n", W_sobi @ A)
         print("rel_err of SOBI: ", sobi_rel_err)
         
